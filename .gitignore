@@ -1,0 +1,17 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.rsuser
+
+# Rider
+.idea/
+
+# VS Code local workspace state
+.vscode/
+
+# OS files
+Thumbs.db
+.DS_Store
