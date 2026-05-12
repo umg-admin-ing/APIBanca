@@ -11,20 +11,28 @@ namespace APIBanca.Controllers;
 public class UsuariosController(AppDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Usuario>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<UsuarioDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await context.Usuarios.AsNoTracking().ToListAsync(cancellationToken));
+        return Ok(await context.Usuarios
+            .AsNoTracking()
+            .Select(usuario => ToDto(usuario))
+            .ToListAsync(cancellationToken));
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Usuario>> GetById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<UsuarioDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var usuario = await context.Usuarios.FindAsync([id], cancellationToken);
+        var usuario = await context.Usuarios
+            .AsNoTracking()
+            .Where(usuario => usuario.IdUsuario == id)
+            .Select(usuario => ToDto(usuario))
+            .FirstOrDefaultAsync(cancellationToken);
+
         return usuario is null ? NotFound() : Ok(usuario);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Usuario>> Post(CreateUsuarioDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<UsuarioDto>> Post(CreateUsuarioDto dto, CancellationToken cancellationToken)
     {
         var usuario = new Usuario
         {
@@ -37,7 +45,7 @@ public class UsuariosController(AppDbContext context) : ControllerBase
 
         context.Usuarios.Add(usuario);
         await context.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = usuario.IdUsuario }, usuario);
+        return CreatedAtAction(nameof(GetById), new { id = usuario.IdUsuario }, ToDto(usuario));
     }
 
     [HttpPut("{id:int}")]
@@ -73,4 +81,14 @@ public class UsuariosController(AppDbContext context) : ControllerBase
         await context.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
+
+    private static UsuarioDto ToDto(Usuario usuario) => new()
+    {
+        IdUsuario = usuario.IdUsuario,
+        IdCliente = usuario.IdCliente,
+        Username = usuario.Username,
+        Rol = usuario.Rol,
+        Estado = usuario.Estado,
+        CreatedAt = usuario.CreatedAt
+    };
 }

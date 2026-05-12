@@ -11,20 +11,28 @@ namespace APIBanca.Controllers;
 public class ClientesController(AppDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Cliente>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<ClienteDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await context.Clientes.AsNoTracking().ToListAsync(cancellationToken));
+        return Ok(await context.Clientes
+            .AsNoTracking()
+            .Select(cliente => ToDto(cliente))
+            .ToListAsync(cancellationToken));
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Cliente>> GetById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<ClienteDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var cliente = await context.Clientes.FindAsync([id], cancellationToken);
+        var cliente = await context.Clientes
+            .AsNoTracking()
+            .Where(cliente => cliente.IdCliente == id)
+            .Select(cliente => ToDto(cliente))
+            .FirstOrDefaultAsync(cancellationToken);
+
         return cliente is null ? NotFound() : Ok(cliente);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Cliente>> Post(CreateClienteDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<ClienteDto>> Post(CreateClienteDto dto, CancellationToken cancellationToken)
     {
         var cliente = new Cliente
         {
@@ -37,7 +45,7 @@ public class ClientesController(AppDbContext context) : ControllerBase
 
         context.Clientes.Add(cliente);
         await context.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = cliente.IdCliente }, cliente);
+        return CreatedAtAction(nameof(GetById), new { id = cliente.IdCliente }, ToDto(cliente));
     }
 
     [HttpPut("{id:int}")]
@@ -73,4 +81,15 @@ public class ClientesController(AppDbContext context) : ControllerBase
         await context.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
+
+    private static ClienteDto ToDto(Cliente cliente) => new()
+    {
+        IdCliente = cliente.IdCliente,
+        Nombre = cliente.Nombre,
+        Dpi = cliente.Dpi,
+        Email = cliente.Email,
+        Telefono = cliente.Telefono,
+        Estado = cliente.Estado,
+        CreatedAt = cliente.CreatedAt
+    };
 }

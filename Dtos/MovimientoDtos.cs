@@ -21,3 +21,22 @@ public class CreateMovimientoDto
 }
 
 public class UpdateMovimientoDto : CreateMovimientoDto;
+
+public class MovimientoDto
+{
+    public int IdMovimiento { get; set; }
+
+    public int IdCuenta { get; set; }
+
+    public string Tipo { get; set; } = string.Empty;
+
+    public decimal Monto { get; set; }
+
+    public string Descripcion { get; set; } = string.Empty;
+
+    public string Referencia { get; set; } = string.Empty;
+
+    public decimal SaldoResultante { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+}

@@ -11,20 +11,28 @@ namespace APIBanca.Controllers;
 public class SolicitudesCreditoController(AppDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SolicitudCredito>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<SolicitudCreditoDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await context.SolicitudesCredito.AsNoTracking().ToListAsync(cancellationToken));
+        return Ok(await context.SolicitudesCredito
+            .AsNoTracking()
+            .Select(solicitudCredito => ToDto(solicitudCredito))
+            .ToListAsync(cancellationToken));
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<SolicitudCredito>> GetById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<SolicitudCreditoDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var solicitudCredito = await context.SolicitudesCredito.FindAsync([id], cancellationToken);
+        var solicitudCredito = await context.SolicitudesCredito
+            .AsNoTracking()
+            .Where(solicitudCredito => solicitudCredito.IdSolicitud == id)
+            .Select(solicitudCredito => ToDto(solicitudCredito))
+            .FirstOrDefaultAsync(cancellationToken);
+
         return solicitudCredito is null ? NotFound() : Ok(solicitudCredito);
     }
 
     [HttpPost]
-    public async Task<ActionResult<SolicitudCredito>> Post(CreateSolicitudCreditoDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<SolicitudCreditoDto>> Post(CreateSolicitudCreditoDto dto, CancellationToken cancellationToken)
     {
         var solicitudCredito = new SolicitudCredito
         {
@@ -37,7 +45,7 @@ public class SolicitudesCreditoController(AppDbContext context) : ControllerBase
 
         context.SolicitudesCredito.Add(solicitudCredito);
         await context.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = solicitudCredito.IdSolicitud }, solicitudCredito);
+        return CreatedAtAction(nameof(GetById), new { id = solicitudCredito.IdSolicitud }, ToDto(solicitudCredito));
     }
 
     [HttpPut("{id:int}")]
@@ -73,4 +81,15 @@ public class SolicitudesCreditoController(AppDbContext context) : ControllerBase
         await context.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
+
+    private static SolicitudCreditoDto ToDto(SolicitudCredito solicitudCredito) => new()
+    {
+        IdSolicitud = solicitudCredito.IdSolicitud,
+        IdCliente = solicitudCredito.IdCliente,
+        MontoSolicitado = solicitudCredito.MontoSolicitado,
+        PlazoMeses = solicitudCredito.PlazoMeses,
+        Estado = solicitudCredito.Estado,
+        Score = solicitudCredito.Score,
+        CreatedAt = solicitudCredito.CreatedAt
+    };
 }

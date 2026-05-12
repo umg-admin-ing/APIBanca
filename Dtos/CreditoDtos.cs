@@ -27,3 +27,24 @@ public class CreateCreditoDto
 }
 
 public class UpdateCreditoDto : CreateCreditoDto;
+
+public class CreditoDto
+{
+    public int IdCredito { get; set; }
+
+    public int IdSolicitud { get; set; }
+
+    public int IdCuenta { get; set; }
+
+    public decimal MontoOriginal { get; set; }
+
+    public decimal SaldoPendiente { get; set; }
+
+    public decimal TasaInteres { get; set; }
+
+    public decimal CuotaMensual { get; set; }
+
+    public string Estado { get; set; } = string.Empty;
+
+    public DateTime FechaInicio { get; set; }
+}

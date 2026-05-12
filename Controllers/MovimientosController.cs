@@ -11,20 +11,28 @@ namespace APIBanca.Controllers;
 public class MovimientosController(AppDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Movimiento>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<MovimientoDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await context.Movimientos.AsNoTracking().ToListAsync(cancellationToken));
+        return Ok(await context.Movimientos
+            .AsNoTracking()
+            .Select(movimiento => ToDto(movimiento))
+            .ToListAsync(cancellationToken));
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Movimiento>> GetById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<MovimientoDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var movimiento = await context.Movimientos.FindAsync([id], cancellationToken);
+        var movimiento = await context.Movimientos
+            .AsNoTracking()
+            .Where(movimiento => movimiento.IdMovimiento == id)
+            .Select(movimiento => ToDto(movimiento))
+            .FirstOrDefaultAsync(cancellationToken);
+
         return movimiento is null ? NotFound() : Ok(movimiento);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Movimiento>> Post(CreateMovimientoDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<MovimientoDto>> Post(CreateMovimientoDto dto, CancellationToken cancellationToken)
     {
         var movimiento = new Movimiento
         {
@@ -38,7 +46,7 @@ public class MovimientosController(AppDbContext context) : ControllerBase
 
         context.Movimientos.Add(movimiento);
         await context.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = movimiento.IdMovimiento }, movimiento);
+        return CreatedAtAction(nameof(GetById), new { id = movimiento.IdMovimiento }, ToDto(movimiento));
     }
 
     [HttpPut("{id:int}")]
@@ -75,4 +83,16 @@ public class MovimientosController(AppDbContext context) : ControllerBase
         await context.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
+
+    private static MovimientoDto ToDto(Movimiento movimiento) => new()
+    {
+        IdMovimiento = movimiento.IdMovimiento,
+        IdCuenta = movimiento.IdCuenta,
+        Tipo = movimiento.Tipo,
+        Monto = movimiento.Monto,
+        Descripcion = movimiento.Descripcion,
+        Referencia = movimiento.Referencia,
+        SaldoResultante = movimiento.SaldoResultante,
+        CreatedAt = movimiento.CreatedAt
+    };
 }

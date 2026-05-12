@@ -11,20 +11,28 @@ namespace APIBanca.Controllers;
 public class TransferenciasController(AppDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Transferencia>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<TransferenciaDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await context.Transferencias.AsNoTracking().ToListAsync(cancellationToken));
+        return Ok(await context.Transferencias
+            .AsNoTracking()
+            .Select(transferencia => ToDto(transferencia))
+            .ToListAsync(cancellationToken));
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Transferencia>> GetById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<TransferenciaDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var transferencia = await context.Transferencias.FindAsync([id], cancellationToken);
+        var transferencia = await context.Transferencias
+            .AsNoTracking()
+            .Where(transferencia => transferencia.IdTransferencia == id)
+            .Select(transferencia => ToDto(transferencia))
+            .FirstOrDefaultAsync(cancellationToken);
+
         return transferencia is null ? NotFound() : Ok(transferencia);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Transferencia>> Post(CreateTransferenciaDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<TransferenciaDto>> Post(CreateTransferenciaDto dto, CancellationToken cancellationToken)
     {
         var transferencia = new Transferencia
         {
@@ -42,7 +50,7 @@ public class TransferenciasController(AppDbContext context) : ControllerBase
 
         context.Transferencias.Add(transferencia);
         await context.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = transferencia.IdTransferencia }, transferencia);
+        return CreatedAtAction(nameof(GetById), new { id = transferencia.IdTransferencia }, ToDto(transferencia));
     }
 
     [HttpPut("{id:int}")]
@@ -83,4 +91,20 @@ public class TransferenciasController(AppDbContext context) : ControllerBase
         await context.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
+
+    private static TransferenciaDto ToDto(Transferencia transferencia) => new()
+    {
+        IdTransferencia = transferencia.IdTransferencia,
+        CuentaOrigenId = transferencia.CuentaOrigenId,
+        CuentaDestinoId = transferencia.CuentaDestinoId,
+        CuentaOrigenExterna = transferencia.CuentaOrigenExterna,
+        CuentaDestinoExterna = transferencia.CuentaDestinoExterna,
+        SwiftOrigen = transferencia.SwiftOrigen,
+        SwiftDestino = transferencia.SwiftDestino,
+        Monto = transferencia.Monto,
+        Tipo = transferencia.Tipo,
+        Direccion = transferencia.Direccion,
+        Estado = transferencia.Estado,
+        CreatedAt = transferencia.CreatedAt
+    };
 }

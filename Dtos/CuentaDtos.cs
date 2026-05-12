@@ -22,3 +22,22 @@ public class CreateCuentaDto
 }
 
 public class UpdateCuentaDto : CreateCuentaDto;
+
+public class CuentaDto
+{
+    public int IdCuenta { get; set; }
+
+    public string NumeroCuenta { get; set; } = string.Empty;
+
+    public int IdCliente { get; set; }
+
+    public decimal Saldo { get; set; }
+
+    public string SwiftBanco { get; set; } = string.Empty;
+
+    public string Tipo { get; set; } = string.Empty;
+
+    public string Estado { get; set; } = string.Empty;
+
+    public DateTime CreatedAt { get; set; }
+}

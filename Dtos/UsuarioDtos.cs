@@ -19,3 +19,18 @@ public class CreateUsuarioDto
 }
 
 public class UpdateUsuarioDto : CreateUsuarioDto;
+
+public class UsuarioDto
+{
+    public int IdUsuario { get; set; }
+
+    public int IdCliente { get; set; }
+
+    public string Username { get; set; } = string.Empty;
+
+    public string Rol { get; set; } = string.Empty;
+
+    public string Estado { get; set; } = string.Empty;
+
+    public DateTime CreatedAt { get; set; }
+}

@@ -11,20 +11,28 @@ namespace APIBanca.Controllers;
 public class CreditosController(AppDbContext context) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Credito>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<CreditoDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return Ok(await context.Creditos.AsNoTracking().ToListAsync(cancellationToken));
+        return Ok(await context.Creditos
+            .AsNoTracking()
+            .Select(credito => ToDto(credito))
+            .ToListAsync(cancellationToken));
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Credito>> GetById(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<CreditoDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var credito = await context.Creditos.FindAsync([id], cancellationToken);
+        var credito = await context.Creditos
+            .AsNoTracking()
+            .Where(credito => credito.IdCredito == id)
+            .Select(credito => ToDto(credito))
+            .FirstOrDefaultAsync(cancellationToken);
+
         return credito is null ? NotFound() : Ok(credito);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Credito>> Post(CreateCreditoDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<CreditoDto>> Post(CreateCreditoDto dto, CancellationToken cancellationToken)
     {
         var credito = new Credito
         {
@@ -40,7 +48,7 @@ public class CreditosController(AppDbContext context) : ControllerBase
 
         context.Creditos.Add(credito);
         await context.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = credito.IdCredito }, credito);
+        return CreatedAtAction(nameof(GetById), new { id = credito.IdCredito }, ToDto(credito));
     }
 
     [HttpPut("{id:int}")]
@@ -79,4 +87,17 @@ public class CreditosController(AppDbContext context) : ControllerBase
         await context.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
+
+    private static CreditoDto ToDto(Credito credito) => new()
+    {
+        IdCredito = credito.IdCredito,
+        IdSolicitud = credito.IdSolicitud,
+        IdCuenta = credito.IdCuenta,
+        MontoOriginal = credito.MontoOriginal,
+        SaldoPendiente = credito.SaldoPendiente,
+        TasaInteres = credito.TasaInteres,
+        CuotaMensual = credito.CuotaMensual,
+        Estado = credito.Estado,
+        FechaInicio = credito.FechaInicio
+    };
 }

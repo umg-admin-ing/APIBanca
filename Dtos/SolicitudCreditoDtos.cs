@@ -19,3 +19,20 @@ public class CreateSolicitudCreditoDto
 }
 
 public class UpdateSolicitudCreditoDto : CreateSolicitudCreditoDto;
+
+public class SolicitudCreditoDto
+{
+    public int IdSolicitud { get; set; }
+
+    public int IdCliente { get; set; }
+
+    public decimal MontoSolicitado { get; set; }
+
+    public int PlazoMeses { get; set; }
+
+    public string Estado { get; set; } = string.Empty;
+
+    public int Score { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+}
