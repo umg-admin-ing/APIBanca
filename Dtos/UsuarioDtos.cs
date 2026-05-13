@@ -8,9 +8,11 @@ public class CreateUsuarioDto
     public int IdCliente { get; set; }
 
     [Required]
+    [StringLength(50)]
     public string Username { get; set; } = string.Empty;
 
     [Required]
+    [MinLength(6)]
     public string PasswordHash { get; set; } = string.Empty;
 
     public string Rol { get; set; } = "CLIENTE";
@@ -33,4 +35,13 @@ public class UsuarioDto
     public string Estado { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
+}
+
+public class LoginDto
+{
+    [Required]
+    public string Username { get; set; } = string.Empty;
+
+    [Required]
+    public string Password { get; set; } = string.Empty;
 }
