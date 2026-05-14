@@ -31,21 +31,7 @@ public class AbonosController(AppDbContext context) : ControllerBase
         return abono is null ? NotFound() : Ok(abono);
     }
 
-    [HttpPost]
-    public async Task<ActionResult<AbonoDto>> Post(CreateAbonoDto dto, CancellationToken cancellationToken)
-    {
-        var abono = new Abono
-        {
-            IdCredito = dto.IdCredito,
-            Monto = dto.Monto,
-            SaldoAnterior = dto.SaldoAnterior,
-            SaldoNuevo = dto.SaldoNuevo ?? dto.SaldoAnterior - dto.Monto
-        };
-
-        context.Abonos.Add(abono);
-        await context.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = abono.IdAbono }, ToDto(abono));
-    }
+    
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Put(int id, UpdateAbonoDto dto, CancellationToken cancellationToken)
@@ -87,6 +73,7 @@ public class AbonosController(AppDbContext context) : ControllerBase
         Monto = abono.Monto,
         SaldoAnterior = abono.SaldoAnterior,
         SaldoNuevo = abono.SaldoNuevo,
+        TipoAbono = abono.TipoAbono,  // ← NUEVO
         CreatedAt = abono.CreatedAt
     };
 }

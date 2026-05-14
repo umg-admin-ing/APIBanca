@@ -27,6 +27,9 @@ public class Abono
     [Column("saldo_nuevo")]
     public decimal SaldoNuevo { get; set; }
 
+    [Column("tipo_abono")]          // ← NUEVO
+    public string TipoAbono { get; set; } = string.Empty;
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -48,6 +48,98 @@ public class SolicitudesCreditoController(AppDbContext context) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = solicitudCredito.IdSolicitud }, ToDto(solicitudCredito));
     }
 
+    // POST api/solicitudes-credito/{id}/aprobar
+    [HttpPost("{id:int}/aprobar")]
+    public async Task<ActionResult<CreditoDto>> Aprobar(
+        int id,
+        AprobarSolicitudDto dto,
+        CancellationToken cancellationToken)
+    {
+        var solicitud = await context.SolicitudesCredito
+            .FindAsync([id], cancellationToken);
+
+        if (solicitud is null)
+            return NotFound("Solicitud no encontrada.");
+
+        if (solicitud.Estado != "PENDIENTE")
+            return Conflict($"La solicitud ya fue procesada (estado: {solicitud.Estado}).");
+
+        var cuentaExiste = await context.Cuentas
+            .AnyAsync(c => c.IdCuenta == dto.IdCuenta, cancellationToken);
+
+        if (!cuentaExiste)
+            return BadRequest("La cuenta destino no existe.");
+
+        // Cálculo cuota nivelada (sistema francés)
+        // i = tasa mensual, n = plazo en meses
+        decimal tasaMensual = dto.TasaInteresAnual / 100m / 12m;
+        decimal n = solicitud.PlazoMeses;
+        decimal monto = solicitud.MontoSolicitado;
+
+        // Fórmula: C = P * [i(1+i)^n] / [(1+i)^n - 1]
+        decimal factor = (decimal)Math.Pow((double)(1 + tasaMensual), (double)n);
+        decimal cuotaMensual = monto * (tasaMensual * factor) / (factor - 1);
+        cuotaMensual = Math.Round(cuotaMensual, 2);
+
+        // Actualizar solicitud
+        solicitud.Estado = "APROBADA";
+
+        // Crear crédito
+        var credito = new Credito
+        {
+            IdSolicitud = solicitud.IdSolicitud,
+            IdCuenta = dto.IdCuenta,
+            MontoOriginal = monto,
+            SaldoPendiente = monto,
+            TasaInteres = dto.TasaInteresAnual,
+            CuotaMensual = cuotaMensual,
+            Estado = "ACTIVO",
+            FechaInicio = DateTime.UtcNow
+        };
+
+        context.Creditos.Add(credito);
+        await context.SaveChangesAsync(cancellationToken);
+
+        // Log
+        Console.WriteLine(
+            $"[CREDITO APROBADO] SolicitudId={id} | CreditoId={credito.IdCredito} | " +
+            $"Monto={monto} | Cuota={cuotaMensual} | Tasa={dto.TasaInteresAnual}% | " +
+            $"Cuenta={dto.IdCuenta} | At={DateTime.UtcNow:O}");
+
+        return Ok(CreditosController.ToDto(credito));
+
+    }
+
+    // POST api/solicitudes-credito/{id}/denegar
+    [HttpPost("{id:int}/denegar")]
+    public async Task<IActionResult> Denegar(
+        int id,
+        DenegarSolicitudDto dto,
+        CancellationToken cancellationToken)
+    {
+        var solicitud = await context.SolicitudesCredito
+            .FindAsync([id], cancellationToken);
+
+        if (solicitud is null)
+            return NotFound("Solicitud no encontrada.");
+
+        if (solicitud.Estado != "PENDIENTE")
+            return Conflict($"La solicitud ya fue procesada (estado: {solicitud.Estado}).");
+
+        solicitud.Estado = "DENEGADA";
+        await context.SaveChangesAsync(cancellationToken);
+
+        // Log
+        Console.WriteLine(
+            $"[CREDITO DENEGADO] SolicitudId={id} | " +
+            $"Motivo=\"{dto.Motivo}\" | At={DateTime.UtcNow:O}");
+
+        return Ok(new { mensaje = "Solicitud denegada.", motivo = dto.Motivo });
+    }
+
+
+
+
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Put(int id, UpdateSolicitudCreditoDto dto, CancellationToken cancellationToken)
     {
