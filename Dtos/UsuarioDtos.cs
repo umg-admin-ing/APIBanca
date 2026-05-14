@@ -13,7 +13,7 @@ public class CreateUsuarioDto
 
     [Required]
     [MinLength(6)]
-    public string PasswordHash { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 
     public string Rol { get; set; } = "CLIENTE";
 
@@ -40,8 +40,10 @@ public class UsuarioDto
 public class LoginDto
 {
     [Required]
+    [StringLength(50)]
     public string Username { get; set; } = string.Empty;
 
     [Required]
+    [MinLength(6)]
     public string Password { get; set; } = string.Empty;
 }
