@@ -11,6 +11,8 @@ public class CreateTransferenciaDto
 
     public string? CuentaOrigenExterna { get; set; }
 
+    public string? NombreCuentaOrigenExterna { get; set; }
+
     public string? CuentaDestinoExterna { get; set; }
 
     public string? SwiftOrigen { get; set; }
@@ -35,7 +37,7 @@ public class CreateTransferenciaInternaDto
     public int CuentaOrigenId { get; set; }
 
     [Required]
-    public int CuentaDestinoId { get; set; }
+    public string NumeroCuentaDestino { get; set; } = string.Empty;
 
     [Required]
     public decimal Monto { get; set; }
@@ -69,6 +71,9 @@ public class CreateTransferenciaInterbancariaEntranteDto
     public string CuentaOrigenExterna { get; set; } = string.Empty;
 
     [Required]
+    public string NombreCuentaOrigenExterna { get; set; } = string.Empty;
+
+    [Required]
     public string SwiftOrigen { get; set; } = string.Empty;
 
     [Required]
@@ -87,11 +92,15 @@ public class TransferenciaDto
 
     public string? CuentaOrigenExterna { get; set; }
 
+    public string? NombreCuentaOrigenExterna { get; set; }
+
     public string? CuentaDestinoExterna { get; set; }
 
     public string? SwiftOrigen { get; set; }
 
     public string? SwiftDestino { get; set; }
+
+    public string? NombreClienteDestino { get; set; }
 
     public decimal Monto { get; set; }
 
@@ -123,3 +132,4 @@ public class ValidarTransferenciaRespuestaDto
 {
     public string Estado { get; set; } = string.Empty;
 }
+

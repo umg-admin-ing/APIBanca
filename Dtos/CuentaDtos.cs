@@ -42,6 +42,13 @@ public class CuentaDto
     public DateTime CreatedAt { get; set; }
 }
 
+public class CuentaVerificacionDto
+{
+    public string NumeroCuenta { get; set; } = string.Empty;
+
+    public string NombreCliente { get; set; } = string.Empty;
+}
+
 public class MontoFlotanteTransferenciaDto
 {
     public int IdTransferencia { get; set; }

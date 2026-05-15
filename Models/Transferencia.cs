@@ -21,6 +21,9 @@ public class Transferencia
     [Column("cuenta_origen_externa")]
     public string? CuentaOrigenExterna { get; set; }
 
+    [Column("nombre_cuenta_origen_externa")]
+    public string? NombreCuentaOrigenExterna { get; set; }
+
     [Column("cuenta_destino_externa")]
     public string? CuentaDestinoExterna { get; set; }
 

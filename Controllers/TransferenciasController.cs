@@ -48,6 +48,7 @@ public class TransferenciasController(
             CuentaOrigenId = dto.CuentaOrigenId,
             CuentaDestinoId = dto.CuentaDestinoId,
             CuentaOrigenExterna = dto.CuentaOrigenExterna,
+            NombreCuentaOrigenExterna = dto.NombreCuentaOrigenExterna,
             CuentaDestinoExterna = dto.CuentaDestinoExterna,
             SwiftOrigen = dto.SwiftOrigen,
             SwiftDestino = dto.SwiftDestino,
@@ -130,6 +131,7 @@ public class TransferenciasController(
         transferencia.CuentaOrigenId = dto.CuentaOrigenId;
         transferencia.CuentaDestinoId = dto.CuentaDestinoId;
         transferencia.CuentaOrigenExterna = dto.CuentaOrigenExterna;
+        transferencia.NombreCuentaOrigenExterna = dto.NombreCuentaOrigenExterna;
         transferencia.CuentaDestinoExterna = dto.CuentaDestinoExterna;
         transferencia.SwiftOrigen = dto.SwiftOrigen;
         transferencia.SwiftDestino = dto.SwiftDestino;
@@ -162,9 +164,29 @@ public class TransferenciasController(
         CuentaOrigenId = transferencia.CuentaOrigenId,
         CuentaDestinoId = transferencia.CuentaDestinoId,
         CuentaOrigenExterna = transferencia.CuentaOrigenExterna,
+        NombreCuentaOrigenExterna = transferencia.NombreCuentaOrigenExterna,
         CuentaDestinoExterna = transferencia.CuentaDestinoExterna,
         SwiftOrigen = transferencia.SwiftOrigen,
         SwiftDestino = transferencia.SwiftDestino,
+        NombreClienteDestino = null,
+        Monto = transferencia.Monto,
+        Tipo = transferencia.Tipo,
+        Direccion = transferencia.Direccion,
+        Estado = transferencia.Estado,
+        CreatedAt = transferencia.CreatedAt
+    };
+
+    private static TransferenciaDto ToDto(Transferencia transferencia, string? nombreClienteDestino) => new()
+    {
+        IdTransferencia = transferencia.IdTransferencia,
+        CuentaOrigenId = transferencia.CuentaOrigenId,
+        CuentaDestinoId = transferencia.CuentaDestinoId,
+        CuentaOrigenExterna = transferencia.CuentaOrigenExterna,
+        NombreCuentaOrigenExterna = transferencia.NombreCuentaOrigenExterna,
+        CuentaDestinoExterna = transferencia.CuentaDestinoExterna,
+        SwiftOrigen = transferencia.SwiftOrigen,
+        SwiftDestino = transferencia.SwiftDestino,
+        NombreClienteDestino = nombreClienteDestino,
         Monto = transferencia.Monto,
         Tipo = transferencia.Tipo,
         Direccion = transferencia.Direccion,
@@ -179,10 +201,12 @@ public class TransferenciasController(
             return BadRequest("El monto debe ser mayor que cero.");
         }
 
-        if (dto.CuentaOrigenId == dto.CuentaDestinoId)
+        if (string.IsNullOrWhiteSpace(dto.NumeroCuentaDestino))
         {
-            return BadRequest("La cuenta origen y destino no pueden ser la misma.");
+            return BadRequest("El numero de cuenta destino es requerido.");
         }
+
+        var numeroCuentaDestino = dto.NumeroCuentaDestino.Trim();
 
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
@@ -194,8 +218,13 @@ public class TransferenciasController(
             return BadRequest("La cuenta origen no existe.");
         }
 
+        if (string.Equals(cuentaOrigen.NumeroCuenta, numeroCuentaDestino, StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("La cuenta origen y destino no pueden ser la misma.");
+        }
+
         var cuentaDestino = await context.Cuentas
-            .FirstOrDefaultAsync(cuenta => cuenta.IdCuenta == dto.CuentaDestinoId, cancellationToken);
+            .FirstOrDefaultAsync(cuenta => cuenta.NumeroCuenta == numeroCuentaDestino, cancellationToken);
 
         if (cuentaDestino is null)
         {
@@ -406,6 +435,11 @@ public class TransferenciasController(
             return BadRequest("El numero de cuenta destino es requerido.");
         }
 
+        if (string.IsNullOrWhiteSpace(dto.NombreCuentaOrigenExterna))
+        {
+            return BadRequest("El nombre de la cuenta origen es requerido.");
+        }
+
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         var cuentaDestino = await context.Cuentas
@@ -438,6 +472,7 @@ public class TransferenciasController(
         {
             CuentaDestinoId = cuentaDestino.IdCuenta,
             CuentaOrigenExterna = dto.CuentaOrigenExterna,
+            NombreCuentaOrigenExterna = dto.NombreCuentaOrigenExterna.Trim(),
             CuentaDestinoExterna = cuentaDestino.NumeroCuenta,
             SwiftOrigen = dto.SwiftOrigen,
             SwiftDestino = cuentaDestino.SwiftBanco,
@@ -455,7 +490,7 @@ public class TransferenciasController(
             IdCuenta = cuentaDestino.IdCuenta,
             Tipo = "CREDITO_TRANSFERENCIA_EXTERNA",
             Monto = dto.Monto,
-            Descripcion = $"Transferencia interbancaria recibida de {dto.CuentaOrigenExterna}",
+            Descripcion = $"Transferencia interbancaria recibida de {dto.NombreCuentaOrigenExterna.Trim()} ({dto.CuentaOrigenExterna})",
             Referencia = $"TRF-EXT-IN-{transferencia.IdTransferencia}",
             SaldoResultante = cuentaDestino.Saldo
         });
@@ -463,6 +498,9 @@ public class TransferenciasController(
         await context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = transferencia.IdTransferencia }, ToDto(transferencia));
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = transferencia.IdTransferencia },
+            ToDto(transferencia, cuentaDestino.Cliente.Nombre));
     }
 }

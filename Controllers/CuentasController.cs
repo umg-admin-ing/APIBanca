@@ -31,6 +31,26 @@ public class CuentasController(AppDbContext context) : ControllerBase
         return cuenta is null ? NotFound() : Ok(cuenta);
     }
 
+    [HttpGet("numero/{numeroCuenta}")]
+    public async Task<ActionResult<CuentaVerificacionDto>> GetByNumeroCuenta(string numeroCuenta, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(numeroCuenta))
+        {
+            return BadRequest("Numero de cuenta invalido.");
+        }
+
+        var numeroCuentaNormalizado = numeroCuenta.Trim();
+
+        var cuenta = await context.Cuentas
+            .AsNoTracking()
+            .Include(cuenta => cuenta.Cliente)
+            .Where(cuenta => cuenta.NumeroCuenta == numeroCuentaNormalizado)
+            .Select(cuenta => ToVerificacionDto(cuenta))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return cuenta is null ? NotFound() : Ok(cuenta);
+    }
+
     [HttpGet("{id:int}/monto-flotante")]
     public async Task<ActionResult<CuentaMontoFlotanteDto>> GetMontoFlotante(int id, CancellationToken cancellationToken)
     {
@@ -142,5 +162,11 @@ public class CuentasController(AppDbContext context) : ControllerBase
         Tipo = cuenta.Tipo,
         Estado = cuenta.Estado,
         CreatedAt = cuenta.CreatedAt
+    };
+
+    private static CuentaVerificacionDto ToVerificacionDto(Models.Cuenta cuenta) => new()
+    {
+        NumeroCuenta = cuenta.NumeroCuenta,
+        NombreCliente = cuenta.Cliente.Nombre
     };
 }
