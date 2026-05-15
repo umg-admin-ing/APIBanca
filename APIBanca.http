@@ -1,6 +1,94 @@
 @APIBanca_HostAddress = http://localhost:5049
+@ClientePruebaId = 0
 
 GET {{APIBanca_HostAddress}}/weatherforecast/
 Accept: application/json
+
+###
+
+POST {{APIBanca_HostAddress}}/api/clientes
+Content-Type: application/json
+
+{
+	"nombre": "Cliente Prueba Transferencias",
+	"dpi": "1234567890101",
+	"email": "cliente.prueba.transferencias@example.com",
+	"telefono": "55550001",
+	"estado": "ACTIVO"
+}
+
+###
+
+POST {{APIBanca_HostAddress}}/api/transferencias/interna
+Content-Type: application/json
+
+{
+	"cuentaOrigenId": 1,
+	"cuentaDestinoId": 2,
+	"monto": 250.00
+}
+
+###
+
+POST {{APIBanca_HostAddress}}/api/transferencias/interbancaria/saliente
+Content-Type: application/json
+
+{
+	"cuentaOrigenId": 1,
+	"cuentaDestinoExterna": "998877665544",
+	"swiftDestino": "GTRUXXXX",
+	"monto": 150.00
+}
+
+###
+
+POST {{APIBanca_HostAddress}}/api/transferencias/interbancaria/entrante
+Content-Type: application/json
+
+{
+	"numeroCuentaDestino": "000123456789",
+	"cuentaOrigenExterna": "998877665544",
+	"swiftOrigen": "GTBIXXXX",
+	"monto": 150.00
+}
+
+###
+
+POST {{APIBanca_HostAddress}}/api/transferencia/validar
+Content-Type: application/json
+
+{
+	"transaction_id": "TRX-1001",
+	"cuenta_destino": "000123456789",
+	"monto": 150.00
+}
+
+###
+
+POST {{APIBanca_HostAddress}}/api/transferencias
+Content-Type: application/json
+
+{
+	"cuentaOrigenId": 1,
+	"cuentaDestinoId": 2,
+	"monto": 50.00,
+	"tipo": "PRUEBA",
+	"direccion": "MANUAL",
+	"estado": "PENDIENTE"
+}
+
+###
+
+POST {{APIBanca_HostAddress}}/api/cuentas
+Content-Type: application/json
+
+{
+	"numeroCuenta": "000123456789",
+	"idCliente": {{ClientePruebaId}},
+	"saldo": 5000.00,
+	"swiftBanco": "BANCOLOCALXXX",
+	"tipo": "AHORRO",
+	"estado": "ACTIVA"
+}
 
 ###

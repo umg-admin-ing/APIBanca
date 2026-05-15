@@ -31,6 +31,54 @@ public class CuentasController(AppDbContext context) : ControllerBase
         return cuenta is null ? NotFound() : Ok(cuenta);
     }
 
+    [HttpGet("{id:int}/monto-flotante")]
+    public async Task<ActionResult<CuentaMontoFlotanteDto>> GetMontoFlotante(int id, CancellationToken cancellationToken)
+    {
+        var cuenta = await context.Cuentas
+            .AsNoTracking()
+            .Where(cuenta => cuenta.IdCuenta == id)
+            .Select(cuenta => new
+            {
+                cuenta.IdCuenta,
+                cuenta.NumeroCuenta
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (cuenta is null)
+        {
+            return NotFound();
+        }
+
+        var transferenciasPendientes = await context.Transferencias
+            .AsNoTracking()
+            .Where(transferencia => transferencia.CuentaOrigenId == id
+                && transferencia.Tipo == "INTERBANCARIA"
+                && transferencia.Direccion == "SALIENTE"
+                && transferencia.Estado == "PENDIENTE")
+            .OrderByDescending(transferencia => transferencia.CreatedAt)
+            .Select(transferencia => new MontoFlotanteTransferenciaDto
+            {
+                IdTransferencia = transferencia.IdTransferencia,
+                CuentaDestinoExterna = transferencia.CuentaDestinoExterna ?? string.Empty,
+                SwiftDestino = transferencia.SwiftDestino ?? string.Empty,
+                Monto = transferencia.Monto,
+                Estado = transferencia.Estado,
+                CreatedAt = transferencia.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var response = new CuentaMontoFlotanteDto
+        {
+            IdCuenta = cuenta.IdCuenta,
+            NumeroCuenta = cuenta.NumeroCuenta,
+            MontoFlotante = transferenciasPendientes.Sum(transferencia => transferencia.Monto),
+            CantidadTransferenciasPendientes = transferenciasPendientes.Count,
+            Transferencias = transferenciasPendientes
+        };
+
+        return Ok(response);
+    }
+
     [HttpPost]
     public async Task<ActionResult<CuentaDto>> Post(CreateCuentaDto dto, CancellationToken cancellationToken)
     {

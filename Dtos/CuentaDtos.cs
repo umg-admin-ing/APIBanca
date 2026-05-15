@@ -41,3 +41,31 @@ public class CuentaDto
 
     public DateTime CreatedAt { get; set; }
 }
+
+public class MontoFlotanteTransferenciaDto
+{
+    public int IdTransferencia { get; set; }
+
+    public string CuentaDestinoExterna { get; set; } = string.Empty;
+
+    public string SwiftDestino { get; set; } = string.Empty;
+
+    public decimal Monto { get; set; }
+
+    public string Estado { get; set; } = string.Empty;
+
+    public DateTime CreatedAt { get; set; }
+}
+
+public class CuentaMontoFlotanteDto
+{
+    public int IdCuenta { get; set; }
+
+    public string NumeroCuenta { get; set; } = string.Empty;
+
+    public decimal MontoFlotante { get; set; }
+
+    public int CantidadTransferenciasPendientes { get; set; }
+
+    public List<MontoFlotanteTransferenciaDto> Transferencias { get; set; } = [];
+}

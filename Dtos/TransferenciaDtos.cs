@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace APIBanca.Dtos;
 
@@ -28,6 +29,52 @@ public class CreateTransferenciaDto
     public string Estado { get; set; } = "PENDIENTE";
 }
 
+public class CreateTransferenciaInternaDto
+{
+    [Required]
+    public int CuentaOrigenId { get; set; }
+
+    [Required]
+    public int CuentaDestinoId { get; set; }
+
+    [Required]
+    public decimal Monto { get; set; }
+}
+
+public class CreateTransferenciaInterbancariaSalienteDto
+{
+    [Required]
+    public int CuentaOrigenId { get; set; }
+
+    [Required]
+    public string CuentaDestinoExterna { get; set; } = string.Empty;
+
+    public string? CuentaOrigenExterna { get; set; }
+
+    public string? SwiftOrigen { get; set; }
+
+    [Required]
+    public string SwiftDestino { get; set; } = string.Empty;
+
+    [Required]
+    public decimal Monto { get; set; }
+}
+
+public class CreateTransferenciaInterbancariaEntranteDto
+{
+    [Required]
+    public string NumeroCuentaDestino { get; set; } = string.Empty;
+
+    [Required]
+    public string CuentaOrigenExterna { get; set; } = string.Empty;
+
+    [Required]
+    public string SwiftOrigen { get; set; } = string.Empty;
+
+    [Required]
+    public decimal Monto { get; set; }
+}
+
 public class UpdateTransferenciaDto : CreateTransferenciaDto;
 
 public class TransferenciaDto
@@ -55,4 +102,24 @@ public class TransferenciaDto
     public string Estado { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
+}
+
+public class ValidarTransferenciaDto
+{
+    [Required]
+    [JsonPropertyName("transaction_id")]
+    public string TransactionId { get; set; } = string.Empty;
+
+    [Required]
+    [JsonPropertyName("cuenta_destino")]
+    public string CuentaDestino { get; set; } = string.Empty;
+
+    [Required]
+    [JsonPropertyName("monto")]
+    public decimal Monto { get; set; }
+}
+
+public class ValidarTransferenciaRespuestaDto
+{
+    public string Estado { get; set; } = string.Empty;
 }
