@@ -4,8 +4,7 @@ namespace APIBanca.Dtos;
 
 public class CreateUsuarioDto
 {
-    [Required]
-    public int IdCliente { get; set; }
+    public int? IdCliente { get; set; }
 
     [Required]
     [StringLength(50)]
@@ -26,7 +25,7 @@ public class UsuarioDto
 {
     public int IdUsuario { get; set; }
 
-    public int IdCliente { get; set; }
+    public int? IdCliente { get; set; }
 
     public string Username { get; set; } = string.Empty;
 

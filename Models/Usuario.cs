@@ -14,7 +14,7 @@ public class Usuario
     public int IdUsuario { get; set; }
 
     [Column("id_cliente")]
-    public int IdCliente { get; set; }
+    public int? IdCliente { get; set; }
 
     [Column("username")]
     public string Username { get; set; } = string.Empty;
@@ -32,5 +32,5 @@ public class Usuario
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey(nameof(IdCliente))]
-    public Cliente Cliente { get; set; } = null!;
+    public Cliente? Cliente { get; set; }
 }

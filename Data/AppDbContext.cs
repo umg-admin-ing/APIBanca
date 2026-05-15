@@ -27,6 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(cliente => cliente.Usuario)
             .WithOne(usuario => usuario.Cliente)
             .HasForeignKey<Usuario>(usuario => usuario.IdCliente)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Cliente>()
