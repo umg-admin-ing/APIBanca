@@ -81,6 +81,7 @@ public class UsuariosController(AppDbContext context, IConfiguration configurati
         return CreatedAtAction(nameof(GetById), new { id = usuario.IdUsuario }, ToDto(usuario));
     }
 
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<ActionResult<UsuarioDto>> Login(LoginDto dto, CancellationToken cancellationToken)
     {

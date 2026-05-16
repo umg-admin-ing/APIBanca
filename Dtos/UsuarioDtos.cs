@@ -11,7 +11,7 @@ public class CreateUsuarioDto
     public string Username { get; set; } = string.Empty;
 
     [Required]
-    [MinLength(6)]
+    [MinLength(3)]
     public string Password { get; set; } = string.Empty;
 
     public string Rol { get; set; } = "CLIENTE";
@@ -43,6 +43,6 @@ public class LoginDto
     public string Username { get; set; } = string.Empty;
 
     [Required]
-    [MinLength(6)]
+    [MinLength(3)]
     public string Password { get; set; } = string.Empty;
 }

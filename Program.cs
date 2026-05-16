@@ -1,9 +1,13 @@
 using APIBanca.Data;
+using APIBanca.Models;
 using System.Data;
 using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text;
 using Microsoft.Extensions.Options;
 
@@ -37,29 +41,17 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(Options =>
 {
-    Options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {   Name = "Autorizacion",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Autorizacion JWT usando esquema Bearer."
-});
-
-Options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-{
+    Options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-        {
-            Reference = new Microsoft.OpenApi.Models.OpenApiReference
-            {
-                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                Id = "Bearer"
-            }
-        },
-        Array.Empty<string>()
-    }
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Pegue el JWT; Swagger enviara Authorization: Bearer {token}."
     });
+
+    Options.OperationFilter<AuthorizeOperationFilter>();
 });
 
 builder.Services.AddHttpClient();
@@ -108,6 +100,7 @@ await using (var scope = app.Services.CreateAsyncScope())
         {
             await BaselineInitialMigrationAsync(dbContext);
             await dbContext.Database.MigrateAsync();
+            await SeedDefaultAdminAsync(dbContext);
         }
         catch
         {
@@ -267,7 +260,72 @@ static async Task<bool> ClientesTableExistsAsync(AppDbContext dbContext)
     }
 }
 
+static async Task SeedDefaultAdminAsync(AppDbContext dbContext)
+{
+    const string adminUsername = "allanchopen";
+
+    var adminExists = await dbContext.Usuarios
+        .AsNoTracking()
+        .AnyAsync(usuario => usuario.Username == adminUsername);
+
+    if (adminExists)
+    {
+        return;
+    }
+
+    dbContext.Usuarios.Add(new Usuario
+    {
+        Username = adminUsername,
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("123"),
+        Rol = "ADMIN",
+        Estado = "ACTIVO"
+    });
+
+    await dbContext.SaveChangesAsync();
+}
+
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+}
+
+sealed class AuthorizeOperationFilter : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        var metadata = context.ApiDescription.ActionDescriptor.EndpointMetadata;
+        var allowsAnonymous = metadata.OfType<IAllowAnonymous>().Any();
+        var requiresAuthorization = metadata.OfType<IAuthorizeData>().Any();
+
+        if (allowsAnonymous || !requiresAuthorization)
+        {
+            return;
+        }
+
+        operation.Security ??= new List<OpenApiSecurityRequirement>();
+        operation.Security.Add(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+
+        operation.Responses.TryAdd(StatusCodes.Status401Unauthorized.ToString(), new OpenApiResponse
+        {
+            Description = "Unauthorized"
+        });
+
+        operation.Responses.TryAdd(StatusCodes.Status403Forbidden.ToString(), new OpenApiResponse
+        {
+            Description = "Forbidden"
+        });
+    }
 }
