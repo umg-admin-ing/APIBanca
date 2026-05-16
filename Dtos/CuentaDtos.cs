@@ -5,23 +5,24 @@ namespace APIBanca.Dtos;
 public class CreateCuentaDto
 {
     [Required]
-    public string NumeroCuenta { get; set; } = string.Empty;
-
-    [Required]
     public int IdCliente { get; set; }
-
-    [Required]
-    public string SwiftBanco { get; set; } = string.Empty;
 
     [Required]
     public string Tipo { get; set; } = string.Empty;
 
     public decimal Saldo { get; set; }
-
-    public string Estado { get; set; } = "ACTIVA";
 }
 
-public class UpdateCuentaDto : CreateCuentaDto;
+public class UpdateCuentaDto
+{
+    [Required]
+    public int IdCliente { get; set; }
+
+    [Required]
+    public string Tipo { get; set; } = string.Empty;
+
+    public decimal Saldo { get; set; }
+}
 
 public class CuentaDto
 {
@@ -44,6 +45,68 @@ public class CuentaDto
 
 public class CuentaVerificacionDto
 {
+    public string NumeroCuenta { get; set; } = string.Empty;
+
+    public string NombreCliente { get; set; } = string.Empty;
+}
+
+public class AperturaCuentaClienteDto
+{
+    [Required]
+    public string Nombre { get; set; } = string.Empty;
+
+    [Required]
+    public string Dpi { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    public string Telefono { get; set; } = string.Empty;
+}
+
+public class AperturaCuentaDto
+{
+    [Required]
+    public AperturaCuentaClienteDto Cliente { get; set; } = new();
+
+    [Required]
+    public string Tipo { get; set; } = string.Empty;
+
+    public decimal Saldo { get; set; }
+}
+
+public class CredencialesTemporalesDto
+{
+    public string Username { get; set; } = string.Empty;
+
+    public string PasswordTemporal { get; set; } = string.Empty;
+
+    public bool RequiereCambioPassword { get; set; }
+}
+
+public class AperturaCuentaResponseDto
+{
+    public CuentaDto Cuenta { get; set; } = new();
+
+    public string NombreCliente { get; set; } = string.Empty;
+
+    public bool UsuarioCreado { get; set; }
+
+    public CredencialesTemporalesDto? CredencialesTemporales { get; set; }
+}
+
+public class DepositoCuentaDto
+{
+    [Required]
+    public decimal Monto { get; set; }
+}
+
+public class DepositoCuentaResponseDto
+{
+    public decimal Monto { get; set; }
+
     public string NumeroCuenta { get; set; } = string.Empty;
 
     public string NombreCliente { get; set; } = string.Empty;

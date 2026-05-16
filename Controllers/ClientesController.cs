@@ -10,6 +10,9 @@ namespace APIBanca.Controllers;
 [Route("api/clientes")]
 public class ClientesController(AppDbContext context) : ControllerBase
 {
+    private const string EstadoClienteActivo = "ACTIVO";
+    private const string EstadoClienteInactivo = "INACTIVO";
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ClienteDto>>> GetAll(CancellationToken cancellationToken)
     {
@@ -40,7 +43,7 @@ public class ClientesController(AppDbContext context) : ControllerBase
             Dpi = dto.Dpi,
             Email = dto.Email,
             Telefono = dto.Telefono,
-            Estado = dto.Estado
+            Estado = EstadoClienteActivo
         };
 
         context.Clientes.Add(cliente);
@@ -62,7 +65,48 @@ public class ClientesController(AppDbContext context) : ControllerBase
         cliente.Dpi = dto.Dpi;
         cliente.Email = dto.Email;
         cliente.Telefono = dto.Telefono;
-        cliente.Estado = dto.Estado;
+
+        await context.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPatch("{id:int}/desactivar")]
+    public async Task<IActionResult> Desactivar(int id, CancellationToken cancellationToken)
+    {
+        var cliente = await context.Clientes.FindAsync([id], cancellationToken);
+
+        if (cliente is null)
+        {
+            return NotFound();
+        }
+
+        if (!string.Equals(cliente.Estado, EstadoClienteActivo, StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("El cliente ya no esta activo.");
+        }
+
+        cliente.Estado = EstadoClienteInactivo;
+
+        await context.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPatch("{id:int}/reactivar")]
+    public async Task<IActionResult> Reactivar(int id, CancellationToken cancellationToken)
+    {
+        var cliente = await context.Clientes.FindAsync([id], cancellationToken);
+
+        if (cliente is null)
+        {
+            return NotFound();
+        }
+
+        if (!string.Equals(cliente.Estado, EstadoClienteInactivo, StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("El cliente no esta inactivo.");
+        }
+
+        cliente.Estado = EstadoClienteActivo;
 
         await context.SaveChangesAsync(cancellationToken);
         return NoContent();

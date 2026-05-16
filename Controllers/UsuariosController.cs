@@ -73,7 +73,10 @@ public class UsuariosController(AppDbContext context, IConfiguration configurati
             Username = dto.Username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             Rol = normalizedRole,
-            Estado = dto.Estado
+            Estado = dto.Estado,
+            RequiereCambioPassword = false,
+            PasswordTemporal = false,
+            FechaCambioPassword = DateTime.UtcNow
         };
 
         context.Usuarios.Add(usuario);
@@ -83,7 +86,7 @@ public class UsuariosController(AppDbContext context, IConfiguration configurati
 
     [AllowAnonymous]
     [HttpPost("login")]
-    public async Task<ActionResult<UsuarioDto>> Login(LoginDto dto, CancellationToken cancellationToken)
+    public async Task<ActionResult<LoginResponseDto>> Login(LoginDto dto, CancellationToken cancellationToken)
     {
 
         dto.Username = dto.Username.Trim().ToLower();
@@ -128,12 +131,49 @@ public class UsuariosController(AppDbContext context, IConfiguration configurati
 
         var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return Ok(new
+        return Ok(new LoginResponseDto
         {
             Token = jwt,
             Usuario = ToDto(usuario),
-            Role = usuario.Rol
+            Role = usuario.Rol,
+            RequiereCambioPassword = usuario.RequiereCambioPassword
         });
+    }
+
+    [Authorize]
+    [HttpPost("cambiar-password-temporal")]
+    public async Task<IActionResult> CambiarPasswordTemporal(CambiarPasswordTemporalDto dto, CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var usuario = await context.Usuarios.FindAsync([userId], cancellationToken);
+        if (usuario is null)
+        {
+            return NotFound();
+        }
+
+        var validPassword = BCrypt.Net.BCrypt.Verify(dto.PasswordActual, usuario.PasswordHash);
+        if (!validPassword)
+        {
+            return BadRequest("La contraseña actual es incorrecta.");
+        }
+
+        if (dto.PasswordActual == dto.PasswordNueva)
+        {
+            return BadRequest("La nueva contraseña debe ser diferente a la actual.");
+        }
+
+        usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.PasswordNueva);
+        usuario.RequiereCambioPassword = false;
+        usuario.PasswordTemporal = false;
+        usuario.FechaCambioPassword = DateTime.UtcNow;
+
+        await context.SaveChangesAsync(cancellationToken);
+        return NoContent();
     }
 
     [Authorize(Roles = "ADMIN")]
@@ -174,6 +214,9 @@ public class UsuariosController(AppDbContext context, IConfiguration configurati
         usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
         usuario.Rol = normalizedRole;
         usuario.Estado = dto.Estado;
+        usuario.RequiereCambioPassword = false;
+        usuario.PasswordTemporal = false;
+        usuario.FechaCambioPassword = DateTime.UtcNow;
 
         await context.SaveChangesAsync(cancellationToken);
         return NoContent();
@@ -226,6 +269,9 @@ public class UsuariosController(AppDbContext context, IConfiguration configurati
         Username = usuario.Username,
         Rol = usuario.Rol,
         Estado = usuario.Estado,
+        RequiereCambioPassword = usuario.RequiereCambioPassword,
+        PasswordTemporal = usuario.PasswordTemporal,
+        FechaCambioPassword = usuario.FechaCambioPassword,
         CreatedAt = usuario.CreatedAt
     };
 }

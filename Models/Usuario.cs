@@ -28,6 +28,15 @@ public class Usuario
     [Column("estado")]
     public string Estado { get; set; } = string.Empty;
 
+    [Column("requiere_cambio_password")]
+    public bool RequiereCambioPassword { get; set; }
+
+    [Column("password_temporal")]
+    public bool PasswordTemporal { get; set; }
+
+    [Column("fecha_cambio_password")]
+    public DateTime? FechaCambioPassword { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

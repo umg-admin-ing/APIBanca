@@ -33,6 +33,12 @@ public class UsuarioDto
 
     public string Estado { get; set; } = string.Empty;
 
+    public bool RequiereCambioPassword { get; set; }
+
+    public bool PasswordTemporal { get; set; }
+
+    public DateTime? FechaCambioPassword { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }
 
@@ -45,4 +51,26 @@ public class LoginDto
     [Required]
     [MinLength(3)]
     public string Password { get; set; } = string.Empty;
+}
+
+public class LoginResponseDto
+{
+    public string Token { get; set; } = string.Empty;
+
+    public UsuarioDto Usuario { get; set; } = new();
+
+    public string Role { get; set; } = string.Empty;
+
+    public bool RequiereCambioPassword { get; set; }
+}
+
+public class CambiarPasswordTemporalDto
+{
+    [Required]
+    [MinLength(3)]
+    public string PasswordActual { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(8)]
+    public string PasswordNueva { get; set; } = string.Empty;
 }
