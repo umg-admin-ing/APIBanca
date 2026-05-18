@@ -102,9 +102,8 @@ public class CreditosController(AppDbContext context) : ControllerBase
     CreateAbonoDto dto,
     CancellationToken cancellationToken)
     {
-        // Cargar crédito CON su cuenta asociada
         var credito = await context.Creditos
-            .Include(c => c.Cuenta)              // ← NUEVO: trae la cuenta
+            .Include(c => c.Cuenta)
             .FirstOrDefaultAsync(c => c.IdCredito == id, cancellationToken);
 
         if (credito is null)
@@ -116,7 +115,6 @@ public class CreditosController(AppDbContext context) : ControllerBase
         if (dto.Monto <= 0)
             return BadRequest("El monto del abono debe ser mayor a 0.");
 
-        // Validar saldo suficiente en la cuenta bancaria
         if (credito.Cuenta.Saldo < dto.Monto)
             return BadRequest($"Saldo insuficiente en la cuenta. Saldo disponible: {credito.Cuenta.Saldo:F2}.");
 
@@ -157,8 +155,12 @@ public class CreditosController(AppDbContext context) : ControllerBase
 
         if (saldoNuevo < 0) saldoNuevo = 0;
 
-        // Descontar de la cuenta bancaria
-        credito.Cuenta.Saldo = Math.Round(credito.Cuenta.Saldo - dto.Monto, 2);  // ← NUEVO
+        // Actualizar crédito y cuenta
+        credito.SaldoPendiente = saldoNuevo;
+        credito.Cuenta.Saldo = Math.Round(credito.Cuenta.Saldo - dto.Monto, 2);
+
+        if (saldoNuevo == 0)
+            credito.Estado = "PAGADO";
 
         var abono = new Abono
         {
@@ -170,18 +172,13 @@ public class CreditosController(AppDbContext context) : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        credito.SaldoPendiente = saldoNuevo;
-
-        if (saldoNuevo == 0)
-            credito.Estado = "PAGADO";
-
         context.Abonos.Add(abono);
-        await context.SaveChangesAsync(cancellationToken);  // guarda abono + crédito + cuenta en una sola transacción
+        await context.SaveChangesAsync(cancellationToken);
 
         Console.WriteLine(
             $"[ABONO {dto.TipoAbono}] CreditoId={id} | Monto={dto.Monto} | " +
             $"SaldoAnterior={saldoAnterior} | SaldoNuevo={saldoNuevo} | " +
-            $"NuevaCuota={nuevaCuota?.ToString() ?? "-"} | At={DateTime.UtcNow:O}");
+            $"SaldoCuenta={credito.Cuenta.Saldo:F2} | NuevaCuota={nuevaCuota?.ToString() ?? "-"} | At={DateTime.UtcNow:O}");
 
         return Ok(new AbonoResultadoDto
         {

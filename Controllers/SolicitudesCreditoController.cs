@@ -84,6 +84,11 @@ public class SolicitudesCreditoController(AppDbContext context) : ControllerBase
         // Actualizar solicitud
         solicitud.Estado = "APROBADA";
 
+        var cuenta = await context.Cuentas
+        .FirstOrDefaultAsync(c => c.IdCuenta == dto.IdCuenta, cancellationToken);
+
+        cuenta!.Saldo = Math.Round(cuenta.Saldo + monto, 2);  // ← suma el dinero
+
         // Crear crédito
         var credito = new Credito
         {
